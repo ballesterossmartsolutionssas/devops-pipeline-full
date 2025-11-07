@@ -3,27 +3,30 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main] # Trigger on pushes to main branch
+    branches: [main]      # Trigger on pushes to main branch
   pull_request:
-    branches: [main] # Trigger on PRs to main branch
+    branches: [main]      # Trigger on PRs to main branch
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # Use GitHub's free Linux runner
+  # 1) Job de instalación (como en el artículo: etapa "install")
+  install:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3 # Check out the repository code
+        uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: Set up Node.js 18
         uses: actions/setup-node@v3
         with:
-          node-version: '18' # Use Node.js 18 for consistency
+          node-version: '18'
 
       - name: Cache npm dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.npm # Cache npm’s global cache
+          path: |          # Cache tanto el cache global como node_modules
+            ~/.npm
+            node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
@@ -44,10 +47,79 @@ jobs:
           cd frontend
           npm ci
 
-      # Ejecutar tests definidos en el package.json de la raíz (esto llama al backend)
+  # 2) Job de tests con matrix (como la sección 3 del artículo)
+  test:
+    needs: install           # Espera a que termine el job install
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x]   # Probamos con 2 versiones de Node
+        # Podrías añadir aquí "database: [postgres, mysql]" como en el artículo
+        # pero tu proyecto no lo usa todavía.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      # Ejecuta el script de test definido en package.json (raíz)
       - name: Run tests
         run: npm test
 
-      # Ejecutar lint del backend (según tu script en la raíz)
+  # 3) Job de lint (en paralelo con test, ambos dependen de install)
+  lint:
+    needs: install
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
       - name: Run lint
         run: npm run lint
