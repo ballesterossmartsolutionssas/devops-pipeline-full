@@ -3,12 +3,12 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main]      # Trigger on pushes to main branch
+    branches: [main]        # Trigger on pushes to main branch
   pull_request:
-    branches: [main]      # Trigger on PRs to main branch
+    branches: [main]        # Trigger on PRs to main branch
 
 jobs:
-  # 1) Job de instalación (como en el artículo: etapa "install")
+  # 1) Etapa de instalación (solo verifica que todo instala bien)
   install:
     runs-on: ubuntu-latest
 
@@ -24,39 +24,34 @@ jobs:
       - name: Cache npm dependencies
         uses: actions/cache@v3
         with:
-          path: |          # Cache tanto el cache global como node_modules
+          path: |            # Cache del cache global y node_modules
             ~/.npm
             node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      # Instalar dependencias del proyecto raíz (husky, etc.)
       - name: Install root dependencies
         run: npm ci
 
-      # Instalar dependencias del backend
       - name: Install backend dependencies
         run: |
           cd backend
           npm ci
 
-      # Instalar dependencias del frontend
       - name: Install frontend dependencies
         run: |
           cd frontend
           npm ci
 
-  # 2) Job de tests con matrix (como la sección 3 del artículo)
+  # 2) Etapa de tests con matrix de versiones de Node
   test:
     needs: install           # Espera a que termine el job install
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [16.x, 18.x]   # Probamos con 2 versiones de Node
-        # Podrías añadir aquí "database: [postgres, mysql]" como en el artículo
-        # pero tu proyecto no lo usa todavía.
+        node-version: [16.x, 18.x]   # Probamos en 2 versiones de Node
 
     steps:
       - name: Checkout repository
@@ -85,11 +80,10 @@ jobs:
           cd backend
           npm ci
 
-      # Ejecuta el script de test definido en package.json (raíz)
       - name: Run tests
         run: npm test
 
-  # 3) Job de lint (en paralelo con test, ambos dependen de install)
+  # 3) Etapa de lint (corre en paralelo con test, ambos dependen de install)
   lint:
     needs: install
     runs-on: ubuntu-latest
