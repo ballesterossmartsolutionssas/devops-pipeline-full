@@ -1,0 +1,53 @@
+# CI workflow to build, test, and lint the CRUD app on push or pull request
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main] # Trigger on pushes to main branch
+  pull_request:
+    branches: [main] # Trigger on PRs to main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # Use GitHub's free Linux runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3 # Check out the repository code
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Use Node.js 18 for consistency
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm # Cache npm’s global cache
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Instalar dependencias del proyecto raíz (husky, etc.)
+      - name: Install root dependencies
+        run: npm ci
+
+      # Instalar dependencias del backend
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+
+      # Instalar dependencias del frontend
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      # Ejecutar tests definidos en el package.json de la raíz (esto llama al backend)
+      - name: Run tests
+        run: npm test
+
+      # Ejecutar lint del backend (según tu script en la raíz)
+      - name: Run lint
+        run: npm run lint
