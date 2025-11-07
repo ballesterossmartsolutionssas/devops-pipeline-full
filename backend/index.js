@@ -1,46 +1,42 @@
-const express = require('express');
-const { Pool } = require('pg');
+const express = require('express'); // Import Express for building the API
+const { Pool } = require('pg'); // Import PostgreSQL client
 
-const app = express();
-app.use(express.json());
+const app = express(); // Create an Express app
+app.use(express.json()); // Parse JSON request bodies
 
-// Pool para PostgreSQL usando DATABASE_URL (más adelante lo configuramos)
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://user:password@localhost:5432/mydb'
-});
+// Connect to PostgreSQL using DATABASE_URL from environment variables
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// Health check
-app.get('/healthz', (req, res) => {
-  res.json({ status: 'ok' });
-});
+// Health check endpoint for Kubernetes probes and monitoring
+app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 
-// Obtener usuarios
+// Get all users from the database
 app.get('/users', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM users');
-    res.json(rows);
+    const { rows } = await pool.query('SELECT * FROM users'); // Query the users table
+    res.json(rows); // Send users as JSON
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'DB error (¿falta configurar PostgreSQL?)' });
+    console.error('Error fetching users:', err.message);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
-// Crear usuario
+// Add a new user to the database
 app.post('/users', async (req, res) => {
-  const { name } = req.body;
+  const { name } = req.body; // Get name from request body
+
   try {
+    // Insert user and return the new record
     const { rows } = await pool.query(
       'INSERT INTO users(name) VALUES($1) RETURNING *',
       [name]
     );
-    res.json(rows[0]);
+    res.json(rows[0]); // Send the new user as JSON
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'DB error (¿falta configurar PostgreSQL?)' });
+    console.error('Error inserting user:', err.message);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
-});
+// Start the server on port 3000
+app.listen(3000, () => console.log('Backend running on port 3000'));
