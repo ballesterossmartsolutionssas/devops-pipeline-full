@@ -1,0 +1,15 @@
+{
+  "name": "crud-backend",
+  "version": "1.0.0",
+  "description": "Backend CRUD de ejemplo para pipeline DevOps",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Add tests here\"",
+    "lint": "echo \"Run ESLint here\""
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.12.0"
+  }
+}
