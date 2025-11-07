@@ -1,0 +1,26 @@
+{
+  "name": "devops-pipeline-full",
+  "version": "1.0.0",
+  "description": "Proyecto desde cero siguiendo el artículo: 'How to Build a Production-Ready DevOps Pipeline with Free Tools'.",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "husky install",
+    "test": "cd backend && npm test",
+    "lint": "cd backend && npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ballesterossmartsolutionssas/devops-pipeline-full.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ballesterossmartsolutionssas/devops-pipeline-full/issues"
+  },
+  "homepage": "https://github.com/ballesterossmartsolutionssas/devops-pipeline-full#readme",
+  "devDependencies": {
+    "husky": "^8.0.0"
+  }
+}
